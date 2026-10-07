@@ -23,6 +23,8 @@ interface OptimizedHlsLoaderConfig {
   filterAds?: boolean; // 是否过滤广告
   enableDirectConnect?: boolean; // 是否启用直连模式
   sourceKey?: string; // 源站标识（用于 moontv-source 参数）
+  customAdFilterCode?: string; // 自定义去广告代码
+  currentSource?: string; // 当前播放源（用于自定义去广告代码）
 }
 
 class OptimizedHlsLoader extends Hls.DefaultConfig.loader {
@@ -38,11 +40,17 @@ class OptimizedHlsLoader extends Hls.DefaultConfig.loader {
   private filterAds: boolean;
   private enableDirectConnect: boolean;
   private sourceKey: string;
+  private customAdFilterCode: string;
+  private currentSource: string;
 
   constructor(config: any) {
     super(config);
     const loaderConfig = config as OptimizedHlsLoaderConfig;
     this.filterAds = loaderConfig.filterAds ?? false;
+    this.enableDirectConnect = loaderConfig.enableDirectConnect ?? false;
+    this.sourceKey = loaderConfig.sourceKey ?? '';
+    this.customAdFilterCode = loaderConfig.customAdFilterCode ?? '';
+    this.currentSource = loaderConfig.currentSource ?? '';
     this.enableDirectConnect = loaderConfig.enableDirectConnect ?? false;
     this.sourceKey = loaderConfig.sourceKey ?? '';
 
@@ -124,34 +132,83 @@ class OptimizedHlsLoader extends Hls.DefaultConfig.loader {
   }
 
   /**
-   * 过滤 m3u8 内容中的广告分段（带 #AD 标记）
+   * 过滤 m3u8 内容中的广告分段（#AD 标记 + URL 关键字检测 + 自定义去广告代码）
    */
   private filterAdsFromM3U8(m3u8Content: string): string {
+    if (!m3u8Content) return '';
+
+    // 如果有自定义去广告代码，优先使用
+    if (this.customAdFilterCode && this.customAdFilterCode.trim()) {
+      try {
+        // 移除 TypeScript 类型注解,转换为纯 JavaScript
+        const jsCode = this.customAdFilterCode
+          .replace(/(\w+)\s*:\s*(string|number|boolean|any|void|never|unknown|object)\s*([,)])/g, '$1$3')
+          .replace(/\)\s*:\s*(string|number|boolean|any|void|never|unknown|object)\s*\{/g, ') {')
+          .replace(/(const|let|var)\s+(\w+)\s*:\s*(string|number|boolean|any|void|never|unknown|object)\s*=/g, '$1 $2 =');
+
+        // 创建并执行自定义函数
+        // eslint-disable-next-line no-new-func
+        const customFunction = new Function('type', 'm3u8Content',
+          jsCode + '\nreturn filterAdsFromM3U8(type, m3u8Content);'
+        );
+        const result = customFunction(this.currentSource, m3u8Content);
+        console.log('✅ 使用自定义去广告代码');
+        return result;
+      } catch (err) {
+        console.error('执行自定义去广告代码失败,降级使用默认规则:', err);
+        // 继续使用默认规则
+      }
+    }
+
+    // 默认去广告规则
+    // 广告关键字列表
+    const adKeywords = [
+      'sponsor',
+      '/ad/',
+      '/ads/',
+      'advert',
+      'advertisement',
+      '/adjump',
+      'redtraffic'
+    ];
+
     const lines = m3u8Content.split('\n');
     const filteredLines: string[] = [];
-    let skipNext = false;
+    let i = 0;
 
-    for (let i = 0; i < lines.length; i++) {
+    while (i < lines.length) {
       const line = lines[i];
 
-      // 检测到广告标记
+      // 跳过 #EXT-X-DISCONTINUITY 标识
+      if (line.includes('#EXT-X-DISCONTINUITY')) {
+        i++;
+        continue;
+      }
+
+      // 检测到 #AD 标记
       if (line.includes('#AD')) {
-        skipNext = true;
+        i++;
         continue;
       }
 
-      // 跳过广告的 #EXTINF 行
-      if (skipNext && line.startsWith('#EXTINF')) {
-        continue;
-      }
+      // 如果是 EXTINF 行，检查下一行 URL 是否包含广告关键字
+      if (line.includes('#EXTINF:')) {
+        if (i + 1 < lines.length) {
+          const nextLine = lines[i + 1];
+          const containsAdKeyword = adKeywords.some(keyword =>
+            nextLine.toLowerCase().includes(keyword.toLowerCase())
+          );
 
-      // 跳过广告的 URL 行
-      if (skipNext && !line.startsWith('#')) {
-        skipNext = false;
-        continue;
+          if (containsAdKeyword) {
+            // 跳过 EXTINF 行和 URL 行
+            i += 2;
+            continue;
+          }
+        }
       }
 
       filteredLines.push(line);
+      i++;
     }
 
     return filteredLines.join('\n');

@@ -17,15 +17,15 @@
 
 <div align="center">
 
-![Next.js](https://img.shields.io/badge/Next.js-16.1.0-000?logo=nextdotjs)
-![React](https://img.shields.io/badge/React-19.0.0-61dafb?logo=react)
+![Next.js](https://img.shields.io/badge/Next.js-16.3.6-000?logo=nextdotjs)
+![React](https://img.shields.io/badge/React-19.3.0-61dafb?logo=react)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.8.3-3178c6?logo=typescript)
 ![TailwindCSS](https://img.shields.io/badge/TailwindCSS-4.1.18-38bdf8?logo=tailwindcss)
 ![ArtPlayer](https://img.shields.io/badge/ArtPlayer-5.4.0-ff6b6b)
-![HLS.js](https://img.shields.io/badge/HLS.js-1.6.16-ec407a)
+![HLS.js](https://img.shields.io/badge/HLS.js-1.7.3-ec407a)
 ![License](https://img.shields.io/badge/License-MIT-green)
 ![Docker Ready](https://img.shields.io/badge/Docker-ready-blue?logo=docker)
-![Version](https://img.shields.io/badge/Version-6.6.3-orange)
+![Version](https://img.shields.io/badge/Version-6.6.5-orange)
 
 </div>
 
@@ -33,7 +33,7 @@
 
 ## 📢 About
 
-This project is a deep fork of **MoonTV**, starting from **v4.3.1** and continuously iterated to the current **v6.6.3**, with 60+ major feature modules and 400+ detail optimizations. See [CHANGELOG](CHANGELOG) for all new features.
+This project is a deep fork of **MoonTV**, starting from **v4.3.1** and continuously iterated to the current **v6.6.5**, with 60+ major feature modules and 400+ detail optimizations. See [CHANGELOG](CHANGELOG) for all new features.
 
 ## ⚠️ Disclaimer
 
@@ -66,6 +66,8 @@ This project is for educational purposes only. Do not use for commercial purpose
 - **Persistent Playback Rate**: Remember playback speed settings across sessions
 - **Multi-Audio Track Support**: Auto-select browser-compatible audio tracks for Emby playback with track switching; custom X-Emby-Authorization header support
 - **Video Resolution Filtering**: Auto-infer video stream resolution with resolution-based source filtering
+- **HLS Concurrent Segment Prefetch**: Prefetches the next 2-3 segments alongside the main load for 2-4x faster buffering; 50MB cache cap and failure circuit breaker, ad filtering preserved
+- **Chunked Segment Download**: TS segments over 512KB are split into 4 concurrent Range requests to bypass per-connection speed limits
 
 ### 🔔 Content Tracking System
 
@@ -169,11 +171,11 @@ pnpm dev
 
 ## 🔧 Tech Stack
 
-- **Frontend**: Next.js 16.1.0 + React 19.0.0
+- **Frontend**: Next.js 16.3.6 + React 19.3.0
 - **Language**: TypeScript 5.8.3
 - **Styling**: TailwindCSS 4.1.18
-- **Video Player**: ArtPlayer 5.4.0 + HLS.js 1.6.16
-- **State Management**: TanStack Query 5.100.14 (fully migrated, optimized data fetching and caching)
+- **Video Player**: ArtPlayer 5.4.0 + HLS.js 1.7.3
+- **State Management**: TanStack Query 5.103.1 (fully migrated, optimized data fetching and caching)
 - **Database**: Upstash Redis / Kvrocks / SQLite (three storage backends available)
 - **Deployment**: Docker / Vercel / Render / Tencent EdgeOne
 

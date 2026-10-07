@@ -1,3 +1,21 @@
+## [6.6.5] - 2026-10-01
+
+### Added
+
+- 🚀 HLS 并发分片预取：新增 OptimizedHlsLoader，主加载同时预取后续 2-3 个分片，缓冲速度提升 2-4 倍；缓存上限 50MB，连续失败 3 次自动熔断，跳过 Byte-Range 分片，保留广告过滤与源站标识
+- 🔐 统一认证模块：新增 src/lib/auth.ts，登录/注册/OIDC/Telegram 等路由统一使用密码哈希（HMAC-SHA256）校验与签名生成逻辑
+
+### Changed
+
+- 📦 依赖升级：Next.js 16.1.0→16.3.6、React/React-DOM 19.2.3→19.3.0、hls.js 1.7.1→1.7.3、@mui/material 升级至 9.4.0、@tanstack/react-virtual 升级至 3.14.13、framer-motion 升级至 13.2.0、TanStack Query 系列升级至 5.103.1；移除未使用的依赖；新增 GitHub Actions CI 配置
+- ⚡ 播放体验优化：测速重构为固定并发 worker pool，避免源数量多时创建大量 hls 实例；Wake Lock 释放时机统一移至 video:ended 事件
+- 📥 下载性能优化：大于 512KB 的 TS 分片先探测大小再切 4 块 Range 并发下载合并，突破源站单连接限速；不支持 Range 的源站直接复用完整响应，fMP4 BYTERANGE 场景跳过分块
+
+### Fixed
+
+- 🎬 视频代理播放修复：修复开启视频代理（Cloudflare Worker）后 m3u8 无法播放的问题——代理地址会被 ArtPlayer 误判格式而退回原生 video 播放，导致 hls.js 未启动且降级直连永不触发；现对 m3u8 及其代理地址显式指定播放类型，换集/换源时同步更新，并在 hls.js 未启动时兜底降级为直连
+- 🛡️ 安全加固：修改密码接口增加旧密码校验和新密码合法性检查；定时任务增加 5 分钟最小执行间隔节流；图片代理增加 MIME 类型检查，防止上游返回非图片内容；HTTPS 部署时 Cookie Secure 属性动态判断；admin 与代理路由改用哈希校验替代明文比对
+
 ## [6.6.4] - 2026-08-23
 
 ### Added

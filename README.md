@@ -17,15 +17,15 @@
 
 <div align="center">
 
-![Next.js](https://img.shields.io/badge/Next.js-16.1.0-000?logo=nextdotjs)
-![React](https://img.shields.io/badge/React-19.0.0-61dafb?logo=react)
+![Next.js](https://img.shields.io/badge/Next.js-16.3.6-000?logo=nextdotjs)
+![React](https://img.shields.io/badge/React-19.3.0-61dafb?logo=react)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.8.3-3178c6?logo=typescript)
 ![TailwindCSS](https://img.shields.io/badge/TailwindCSS-4.1.18-38bdf8?logo=tailwindcss)
 ![ArtPlayer](https://img.shields.io/badge/ArtPlayer-5.4.0-ff6b6b)
-![HLS.js](https://img.shields.io/badge/HLS.js-1.6.16-ec407a)
+![HLS.js](https://img.shields.io/badge/HLS.js-1.7.3-ec407a)
 ![License](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-green)
 ![Docker Ready](https://img.shields.io/badge/Docker-ready-blue?logo=docker)
-![Version](https://img.shields.io/badge/Version-6.6.3-orange)
+![Version](https://img.shields.io/badge/Version-6.6.5-orange)
 
 </div>
 
@@ -33,7 +33,7 @@
 
 ## 📢 项目说明
 
-本项目是在 **MoonTV** 基础上进行的深度二次开发版本，从 **v4.3.1** 版本开始，持续迭代至当前 **v6.6.3**，累计新增 60+ 重大功能模块，400+ 细节优化。所有新增功能详见 [CHANGELOG](CHANGELOG)。
+本项目是在 **MoonTV** 基础上进行的深度二次开发版本，从 **v4.3.1** 版本开始，持续迭代至当前 **v6.6.5**，累计新增 60+ 重大功能模块，400+ 细节优化。所有新增功能详见 [CHANGELOG](CHANGELOG)。
 
 ## ⚠️ 重要声明
 
@@ -66,6 +66,8 @@
 - **播放速率持久化**：记住播放速率设置，跨会话保持
 - **多音轨支持**：Emby 播放自动选择浏览器兼容音轨，支持音轨切换；支持自定义 X-Emby-Authorization 请求头
 - **视频分辨率筛选**：自动推断视频流分辨率并支持按分辨率筛选源
+- **HLS 并发分片预取**：主加载同时预取后续 2-3 个分片，缓冲速度提升 2-4 倍；50MB 缓存上限与失败熔断，保留广告过滤
+- **大分片并发下载**：大于 512KB 的 TS 分片自动切 4 块 Range 并发下载，突破源站单连接限速
 
 ### 🔔 内容追踪系统
 
@@ -169,11 +171,11 @@ pnpm dev
 
 ## 🔧 技术栈
 
-- **前端框架**：Next.js 16.1.0 + React 19.0.0
+- **前端框架**：Next.js 16.3.6 + React 19.3.0
 - **开发语言**：TypeScript 5.8.3
 - **样式方案**：TailwindCSS 4.1.18
-- **视频播放**：ArtPlayer 5.4.0 + HLS.js 1.6.16
-- **状态管理**：TanStack Query 5.100.14（全面迁移完成，优化数据获取和缓存）
+- **视频播放**：ArtPlayer 5.4.0 + HLS.js 1.7.3
+- **状态管理**：TanStack Query 5.103.1（全面迁移完成，优化数据获取和缓存）
 - **数据库**：Upstash Redis / Kvrocks / SQLite（三种存储后端可选）
 - **部署方案**：Docker / Vercel / Render / 腾讯云 EdgeOne
 

@@ -255,12 +255,29 @@ export function stripVideoPlayProxy(url: string): string | null {
   if (!proxyUrl || !url.startsWith(proxyUrl)) return null;
 
   try {
+    // searchParams.get 已经完成解码，再 decodeURIComponent 会破坏含 % 的原始地址
     const parsed = new URL(url);
-    const raw = parsed.searchParams.get('url');
-    return raw ? decodeURIComponent(raw) : null;
+    return parsed.searchParams.get('url') || null;
   } catch {
     return null;
   }
+}
+
+// ArtPlayer 用 getExt(url)（先去掉 ? 后的部分，再按 . 取末段）来选 customType。
+// 代理地址如 https://xxx.workers.dev/m3u8?url=... 会得到 "dev/m3u8"，匹配不到 m3u8，
+// 播放器就会退回原生 <video src>，桌面浏览器无法播放 HLS，且 hls.js 不会启动、降级也不会触发。
+// 因此对 m3u8 及其代理地址必须显式指定 type。
+export function isM3u8PlayUrl(url: string): boolean {
+  if (!url) return false;
+  if (/\.m3u8(\?|#|$)/i.test(url)) return true;
+  if (isFirstPartyM3u8Proxy(url)) return true;
+  const { proxyUrl } = getVideoPlayProxyConfig();
+  return !!proxyUrl && url.startsWith(`${proxyUrl}/m3u8?`);
+}
+
+// 返回空字符串时 ArtPlayer 会回退到按扩展名自动判断
+export function getArtPlayerType(url: string): string {
+  return isM3u8PlayUrl(url) ? 'm3u8' : '';
 }
 
 // 直连原始地址失败（上游要求特定 Referer/UA 或不返回 CORS 头）时，最后一层兜底：

@@ -59,7 +59,7 @@ import {
 } from '@/lib/db.client';
 import { getDoubanDetails, getDoubanComments, getDoubanActorMovies } from '@/lib/douban.client';
 import { SearchResult } from '@/lib/types';
-import { applyFirstPartyM3u8Proxy, applyVideoPlayProxy, getVideoResolutionFromM3u8, isFirstPartyM3u8Proxy, processImageUrl, stripVideoPlayProxy, VideoSourceTestResult } from '@/lib/utils';
+import { applyFirstPartyM3u8Proxy, applyVideoPlayProxy, getArtPlayerType, getVideoResolutionFromM3u8, isFirstPartyM3u8Proxy, processImageUrl, stripVideoPlayProxy, VideoSourceTestResult } from '@/lib/utils';
 import { useWatchRoomContextSafe } from '@/components/WatchRoomProvider';
 import { useWatchRoomSync } from './hooks/useWatchRoomSync';
 import {
@@ -4218,6 +4218,8 @@ function PlayPageClient() {
 
         // ☁️ 新地址切换，重置 Worker 代理降级标记（非 m3u8 路径用）
         artPlayerRef.current._proxyFallbackDone = false;
+        // 切换的新地址可能是 m3u8 代理地址，也可能是普通格式，每次都要重新指定 type
+        artPlayerRef.current.option.type = getArtPlayerType(videoUrl);
 
         let switchPromise: Promise<any>;
         if (isEpisodeChange) {
@@ -4364,6 +4366,8 @@ function PlayPageClient() {
       artPlayerRef.current = new Artplayer({
         container: artRef.current,
         url: videoUrl,
+        // 代理地址的扩展名无法被 ArtPlayer 识别为 m3u8，必须显式指定
+        type: getArtPlayerType(videoUrl),
         poster: videoCover,
         volume: 0.7,
         isLive: false,
@@ -4496,6 +4500,8 @@ function PlayPageClient() {
                         filterAds: true,
                         enableDirectConnect: false,
                         sourceKey: '',
+                        customAdFilterCode: customAdFilterCodeRef.current,
+                        currentSource: currentSourceRef.current,
                       });
                     }
                   }
@@ -5957,13 +5963,15 @@ function PlayPageClient() {
           return;
         }
 
-        // ☁️ 非 m3u8 格式（走原生 <video src>）Worker 代理失败时，自动降级为直连原始地址
-        // m3u8 格式的降级在 customType.m3u8 的 Hls.Events.ERROR 处理里完成，此处跳过避免重复
-        if (!artPlayerRef.current._proxyFallbackDone) {
+        // ☁️ Worker 代理播放失败时，自动降级为直连原始地址
+        // hls.js 已接管时（video.hls 存在），降级在 customType.m3u8 的 Hls.Events.ERROR 里完成，此处跳过避免重复；
+        // 但 hls.js 没启动（如 type 未识别）时没有任何人会降级，必须在这里兜底
+        if (!artPlayerRef.current._proxyFallbackDone && !artPlayerRef.current.video?.hls) {
           const rawUrl = stripVideoPlayProxy(videoUrl);
-          if (rawUrl && !/\.m3u8(\?|#|$)/i.test(videoUrl)) {
+          if (rawUrl) {
             console.warn('Worker 代理播放错误，降级为直连:', rawUrl);
             artPlayerRef.current._proxyFallbackDone = true;
+            artPlayerRef.current.option.type = getArtPlayerType(rawUrl);
             artPlayerRef.current.switchUrl(rawUrl);
           }
         }
